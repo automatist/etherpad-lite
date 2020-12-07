@@ -15,6 +15,13 @@ const util = require('util');
 const logger = log4js.getLogger('http');
 let serverName;
 
+const closeServer = async (server) => {
+  await Promise.all([
+    util.promisify(server.close.bind(server))(),
+    hooks.aCallAll('expressCloseServer'),
+  ]);
+};
+
 exports.server = null;
 
 exports.createServer = async () => {
@@ -52,7 +59,7 @@ exports.createServer = async () => {
 exports.restartServer = async () => {
   if (exports.server) {
     console.log('Restarting express server');
-    await util.promisify(exports.server.close).bind(exports.server)();
+    await closeServer(exports.server);
   }
 
   const app = express(); // New syntax for express v3
@@ -182,5 +189,5 @@ exports.restartServer = async () => {
 
 exports.shutdown = async (hookName, context) => {
   if (!exports.server) return;
-  await util.promisify(exports.server.close).bind(exports.server)();
+  await closeServer(exports.server);
 };
